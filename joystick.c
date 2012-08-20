@@ -16,6 +16,7 @@ int fd = open ("/dev/js0", O_RDONLY);
 #include <fcntl.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <linux/joystick.h>
 
 int open_joystick(char *device_name) {
   int joystick_fd = -1;
@@ -52,12 +53,12 @@ If the read is successful, it will return sizeof(struct js_event), unless
 you wanted to read more than one event per read as described in section 3.1.
 */
 
-struct js_event {
-  unsigned int time;
-  short value;
-  unsigned char type;
-  unsigned char number;
-};
+/* struct js_event { */
+/*   unsigned int time; */
+/*   short value; */
+/*   unsigned char type; */
+/*   unsigned char number; */
+/* }; */
 
 int read_event(int joystick_fd, struct js_event *jse) {
   int bytes;
@@ -70,22 +71,6 @@ int read_event(int joystick_fd, struct js_event *jse) {
   printf("Unexpected bytes from joystick:%d\n", bytes);
 
   return -1;
-}
-
-int main() {
-  int fd, result;
-  struct js_event jse;
-  fd = open_joystick("/dev/input/js1");
-
-  while (1) {
-    result = read_event(fd, &jse);
-    usleep(1000);
-    if (result == 1)
-      printf("Event: time %8u, value %8hd, type: %3u, axis/button: %u\n",
-             jse.time, jse.value, jse.type, jse.number);
-  }
-
-  return 0;
 }
 
 /*
@@ -238,8 +223,9 @@ In this case, read would return -1 if the queue was empty, or some
 other value in which the number of events read would be i /
 sizeof(js_event)  Again, if the buffer was full, it's a good idea to
 process the events and keep reading it until you empty the driver queue.
+*/
 
-
+/*
 4. IOCTLs
 ~~~~~~~~~
 
@@ -257,8 +243,25 @@ For example, to read the number of axes
 
 	char number_of_axes;
 	ioctl (fd, JSIOCGAXES, &number_of_axes);
+*/
 
+int main() {
+  int fd, version, axes=0, buttons=0;
+  char name[80];
+  struct js_event jse;
+  fd = open_joystick("/dev/input/js1");
 
+  ioctl(fd, JSIOCGAXES, &axes);
+  ioctl(fd, JSIOCGBUTTONS, &buttons);
+  ioctl(fd, JSIOCGVERSION, &version);
+  ioctl(fd, JSIOCGNAME(80), &name);
+
+  printf("Name: %s Axes: %d Buttons: %d Version: %d\n", name, axes, buttons, version);
+
+  return 0;
+}
+
+/*
 4.1 JSIOGCVERSION
 ~~~~~~~~~~~~~~~~~
 

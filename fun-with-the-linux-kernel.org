@@ -135,6 +135,113 @@ described in section 3.1.
   Event: time 1455924832, value   -32767, type:   2, axis/button: 1
   Event: time 1455924938, value        0, type:   2, axis/button: 1
 #+end_src
+* There is a detailed explanation of what each of the members of the =js_event= struct actually means that we won't cover here :slide:
+* Reading							      :slide:
+#+begin_src fundamental
+  If you open the device in blocking mode, a read will block (that is,
+  wait) forever until an event is generated and effectively read. There
+  are two alternatives if you can't afford to wait forever (which is,
+  admittedly, a long time;)
+
+          a) use select to wait until there's data to be read on fd, or
+             until it timeouts. There's a good example on the select(2)
+             man page.
+
+          b) open the device in non-blocking mode (O_NONBLOCK)
+#+end_src
+* Non-Blocking Reads						      :slide:
+#+begin_src fundamental
+  If read returns -1 when reading in O_NONBLOCK mode, this isn't
+  necessarily a "real" error (check errno(3)); it can just mean there
+  are no events pending to be read on the driver queue. You should read
+  all events on the queue (that is, until you get a -1).
+
+  For example,
+
+          while (1) {
+                  while (read (fd, &e, sizeof(struct js_event)) > 0) {
+                          process_event (e);
+                  }
+                  // EAGAIN is returned when the queue is empty
+                  if (errno != EAGAIN) {
+                          // error
+                  }
+                  // do something interesting with processed events
+          }
+#+end_src
+* Cleaning up our test program					      :slide:
+#+begin_src c
+  int main() {
+    int fd, result;
+    struct js_event jse;
+    fd = open_joystick("/dev/input/js1");
+
+    while (1) {
+      while (read(fd, &jse, sizeof(jse)) > 0) {
+        printf("Event: time %8u, value %8hd, type: %3u, axis/button: %u\n",
+               jse.time, jse.value, jse.type, jse.number);
+      }
+    }
+
+    return 0;
+  }
+#+end_src
+* Why?								      :slide:
+#+begin_src fundamental
+  One reason for emptying the queue is that if it gets full you'll start
+  missing events since the queue is finite, and older events will get
+  overwritten.
+
+  The other reason is that you want to know all what happened, and not
+  delay the processing till later.
+
+  ...
+
+  [As for version 1.2.8, the queue is circular and able to hold 64
+   events. You can increment this size bumping up JS_BUFF_SIZE in
+   joystick.h and recompiling the driver.]
+#+end_src
+* Identifying the device					      :slide:
+#+begin_src fundamental
+  The joystick driver defines the following ioctl(2) operations.
+
+                                  // function               3rd arg
+          #define JSIOCGAXES      // get number of axes     char
+          #define JSIOCGBUTTONS   // get number of buttons  char
+          #define JSIOCGVERSION   // get driver version     int
+          #define JSIOCGNAME(len) // get identifier string  char
+          #define JSIOCSCORR      // set correction values  &js_corr
+          #define JSIOCGCORR      // get correction values  &js_corr
+
+  For example, to read the number of axes
+
+          char number_of_axes;
+          ioctl (fd, JSIOCGAXES, &number_of_axes);
+#+end_src
+* Implementation						      :slide:
+#+begin_src c
+  int main() {
+    int fd, version, axes=0, buttons=0;
+    char name[80];
+    struct js_event jse;
+    fd = open_joystick("/dev/input/js1");
+
+    ioctl(fd, JSIOCGAXES, &axes);
+    ioctl(fd, JSIOCGBUTTONS, &buttons);
+    ioctl(fd, JSIOCGVERSION, &version);
+    ioctl(fd, JSIOCGNAME(80), &name);
+
+    printf("Name: %s Axes: %d Buttons: %d Version: %d\n", name, axes, buttons, version);
+
+    return 0;
+  }
+#+end_src
+* The results							      :slide:
+#+begin_src sh
+  $ gcc -g joystick.c -o joystick
+  $ ./joystick
+  Name: USB Gamepad  Axes: 2 Buttons: 10 Version: 131328
+#+end_src
 
 #+TAGS: slide(s)
 
