@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<title>Fun with the Linux Kernel</title>
+<meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"/>
+<meta name="title" content="Fun with the Linux Kernel"/>
+<meta name="generator" content="Org-mode"/>
+<meta name="generated" content="2012-08-20T15:32-0500"/>
+<meta name="author" content="Aaron Bedra"/>
+<meta name="description" content=""/>
+<meta name="keywords" content=""/>
+
+<link rel="stylesheet" type="text/css" href="common.css" />
+<link rel="stylesheet" type="text/css" href="screen.css" media="screen" />
+<link rel="stylesheet" type="text/css" href="projection.css" media="projection" />
+<link rel="stylesheet" type="text/css" href="presenter.css" media="presenter" />
+
+
+</head>
+<body>
+
+<div id="preamble">
+
+</div>
+
+<div id="content">
+<h1 class="title">Fun with the Linux Kernel</h1>
+
+
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#sec-1">1 Fun with the Linux Kernel</a></li>
+<li><a href="#sec-2">2 Have you ever wanted to build something that required hardware interaction?</a></li>
+<li><a href="#sec-3">3 Let's have some fun!</a></li>
+<li><a href="#sec-4">4 The Linux Kernel can be a pretty boring place unless you are into that kind of thing, so lets head over to joystick land</a></li>
+<li><a href="#sec-5">5 First, let's grab the documentation</a></li>
+<li><a href="#sec-6">6 Good news! There isn't much there. Let's just copy the docs into a source file and implement</a></li>
+<li><a href="#sec-7">7 Initialization</a></li>
+<li><a href="#sec-8">8 Implementation</a></li>
+<li><a href="#sec-9">9 Trying it out</a></li>
+<li><a href="#sec-10">10 Event Reading</a></li>
+<li><a href="#sec-11">11 Implementation</a></li>
+<li><a href="#sec-12">12 Continued</a></li>
+<li><a href="#sec-13">13 Testing it out</a></li>
+<li><a href="#sec-14">14 What it looks like</a></li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-1" class="outline-2">
+<h2 id="sec-1"><span class="section-number-2">1</span> Fun with the Linux Kernel &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
+<div class="outline-text-2" id="text-1">
+
+</div>
+
+</div>
+
+<div id="outline-container-2" class="outline-2">
+<h2 id="sec-2"><span class="section-number-2">2</span> Have you ever wanted to build something that required hardware interaction? &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
+<div class="outline-text-2" id="text-2">
+
+</div>
+
+</div>
+
+<div id="outline-container-3" class="outline-2">
+<h2 id="sec-3"><span class="section-number-2">3</span> Let's have some fun! &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
+<div class="outline-text-2" id="text-3">
+
+<p><img src="allyourbase.jpeg"  alt="allyourbase.jpeg" />
+</p></div>
+
+</div>
+
+<div id="outline-container-4" class="outline-2">
+<h2 id="sec-4"><span class="section-number-2">4</span> The Linux Kernel can be a pretty boring place unless you are into that kind of thing, so lets head over to joystick land &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
+<div class="outline-text-2" id="text-4">
+
+</div>
+
+</div>
+
+<div id="outline-container-5" class="outline-2">
+<h2 id="sec-5"><span class="section-number-2">5</span> First, let's grab the documentation &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
+<div class="outline-text-2" id="text-5">
+
+
+
+
+<pre class="src src-sh">sudo pacman -S linux-docs
+</pre>
+
+</div>
+
+</div>
+
+<div id="outline-container-6" class="outline-2">
+<h2 id="sec-6"><span class="section-number-2">6</span> Good news! There isn't much there. Let's just copy the docs into a source file and implement &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
+<div class="outline-text-2" id="text-6">
+
+</div>
+
+</div>
+
+<div id="outline-container-7" class="outline-2">
+<h2 id="sec-7"><span class="section-number-2">7</span> Initialization &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
+<div class="outline-text-2" id="text-7">
+
+
+
+
+<pre class="src src-fundamental">Open the joystick device following the usual semantics (that is, with
+open). Since the driver now reports events instead of polling for
+changes, immediately after the open it will issue a series of
+synthetic events (JS_EVENT_INIT) that you can read to check the
+initial state of the joystick.
+
+By default, the device is opened in blocking mode.
+
+int fd = open (<span style="color: #87005f;">"/dev/js0"</span>, O_RDONLY);
+</pre>
+
+</div>
+
+</div>
+
+<div id="outline-container-8" class="outline-2">
+<h2 id="sec-8"><span class="section-number-2">8</span> Implementation &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
+<div class="outline-text-2" id="text-8">
+
+
+
+
+<pre class="src src-c"><span style="color: #008700;">int</span> <span style="color: #0000ff;">open_joystick</span>(<span style="color: #008700;">char</span> *<span style="color: #af5f00;">device_name</span>) {
+  <span style="color: #008700;">int</span> <span style="color: #af5f00;">joystick_fd</span> = -1;
+
+  <span style="color: #af00ff;">if</span> (device_name == <span style="color: #008787;">NULL</span>) <span style="color: #af00ff;">return</span> joystick_fd;
+
+  joystick_fd = open(device_name, O_RDONLY | O_NONBLOCK);
+
+  <span style="color: #af00ff;">if</span> (joystick_fd &lt; 0) {
+    printf(<span style="color: #87005f;">"Could not locate joystick device %s\n"</span>, device_name);
+    <span style="color: #af00ff;">return</span> joystick_fd;
+  }
+
+  <span style="color: #af00ff;">return</span> joystick_fd;
+}
+</pre>
+
+</div>
+
+</div>
+
+<div id="outline-container-9" class="outline-2">
+<h2 id="sec-9"><span class="section-number-2">9</span> Trying it out &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
+<div class="outline-text-2" id="text-9">
+
+
+
+
+<pre class="src src-c"><span style="color: #008700;">int</span> <span style="color: #0000ff;">main</span>() {
+  <span style="color: #008700;">int</span> <span style="color: #af5f00;">result</span> = open_joystick(<span style="color: #87005f;">"/dev/input/js1"</span>);
+  printf(<span style="color: #87005f;">"Result was %d\n"</span>, result);
+  <span style="color: #af00ff;">return</span> 0;
+}
+</pre>
+
+
+<pre class="src src-sh">$ gcc joystick.c -o joystick
+$ ./joystick
+Result was 3
+</pre>
+
+
+<pre class="src src-sh">$ ./joystick
+Could not locate joystick device /dev/input/js1
+Result was -1
+</pre>
+
+</div>
+
+</div>
+
+<div id="outline-container-10" class="outline-2">
+<h2 id="sec-10"><span class="section-number-2">10</span> Event Reading &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
+<div class="outline-text-2" id="text-10">
+
+
+
+
+<pre class="src src-fundamental">  struct js_event e;
+  read (fd, &amp;e, sizeof(struct js_event));
+
+  where js_event is defined as
+
+  struct js_event {
+          __u32 time;     // event timestamp in milliseconds
+          __s16 value;    // value
+          __u8 type;      // event type
+          __u8 number;    // axis/button number
+  };
+
+If the read is successful, it will return sizeof(struct js_event),
+unless you wanted to read more than one event per read as
+described in section 3.1.
+</pre>
+
+</div>
+
+</div>
+
+<div id="outline-container-11" class="outline-2">
+<h2 id="sec-11"><span class="section-number-2">11</span> Implementation &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
+<div class="outline-text-2" id="text-11">
+
+
+
+
+<pre class="src src-c"><span style="color: #af00ff;">struct</span> <span style="color: #008700;">js_event</span> {
+  <span style="color: #008700;">unsigned</span> <span style="color: #008700;">int</span> <span style="color: #af5f00;">time</span>;
+  <span style="color: #008700;">short</span> <span style="color: #af5f00;">value</span>;
+  <span style="color: #008700;">unsigned</span> <span style="color: #008700;">char</span> <span style="color: #af5f00;">type</span>;
+  <span style="color: #008700;">unsigned</span> <span style="color: #008700;">char</span> <span style="color: #af5f00;">number</span>;
+};
+</pre>
+
+</div>
+
+</div>
+
+<div id="outline-container-12" class="outline-2">
+<h2 id="sec-12"><span class="section-number-2">12</span> Continued &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
+<div class="outline-text-2" id="text-12">
+
+
+
+
+<pre class="src src-c"><span style="color: #008700;">int</span> <span style="color: #0000ff;">read_joystick_event</span>(<span style="color: #008700;">int</span> <span style="color: #af5f00;">joystick_fd</span>, <span style="color: #af00ff;">struct</span> <span style="color: #008700;">js_event</span> *<span style="color: #af5f00;">jse</span>) {
+  <span style="color: #008700;">int</span> <span style="color: #af5f00;">bytes</span>;
+
+  bytes = read(joystick_fd, jse, <span style="color: #af00ff;">sizeof</span>(*jse));
+
+  <span style="color: #af00ff;">if</span> (bytes == -1) <span style="color: #af00ff;">return</span> 0;
+  <span style="color: #af00ff;">if</span> (bytes == <span style="color: #af00ff;">sizeof</span>(*jse)) <span style="color: #af00ff;">return</span> 1;
+
+  printf(<span style="color: #87005f;">"Unexpected bytes from joystick:%d\n"</span>, bytes);
+
+  <span style="color: #af00ff;">return</span> -1;
+}
+</pre>
+
+</div>
+
+</div>
+
+<div id="outline-container-13" class="outline-2">
+<h2 id="sec-13"><span class="section-number-2">13</span> Testing it out &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
+<div class="outline-text-2" id="text-13">
+
+
+
+
+<pre class="src src-c"><span style="color: #008700;">int</span> <span style="color: #0000ff;">main</span>() {
+  <span style="color: #008700;">int</span> <span style="color: #af5f00;">fd</span>, <span style="color: #af5f00;">result</span>;
+  <span style="color: #af00ff;">struct</span> <span style="color: #008700;">js_event</span> <span style="color: #af5f00;">jse</span>;
+  fd = open_joystick(<span style="color: #87005f;">"/dev/input/js1"</span>);
+
+  <span style="color: #af00ff;">while</span> (1) {
+    result = read_event(fd, &amp;jse);
+    usleep(1000);
+    <span style="color: #af00ff;">if</span> (result == 1)
+      printf(<span style="color: #87005f;">"Event: time %8u, value %8hd, type: %3u, axis/button: %u\n"</span>,
+             jse.time, jse.value, jse.type, jse.number);
+  }
+
+  <span style="color: #af00ff;">return</span> 0;
+}
+</pre>
+
+</div>
+
+</div>
+
+<div id="outline-container-14" class="outline-2">
+<h2 id="sec-14"><span class="section-number-2">14</span> What it looks like &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
+<div class="outline-text-2" id="text-14">
+
+
+
+
+<pre class="src src-sh">$ gcc joystick.c -o joystick
+$ ./joystick
+Event: time 1455917905, value        0, type: 129, axis/button: 0
+Event: time 1455917905, value        0, type: 129, axis/button: 1
+Event: time 1455917908, value        0, type: 129, axis/button: 2
+Event: time 1455917908, value        0, type: 129, axis/button: 3
+Event: time 1455917908, value        0, type: 129, axis/button: 4
+... Rest of initialization ...
+Event: time 1455921538, value        1, type:   1, axis/button: 3
+Event: time 1455921642, value        0, type:   1, axis/button: 3
+Event: time 1455924832, value   -32767, type:   2, axis/button: 1
+Event: time 1455924938, value        0, type:   2, axis/button: 1
+</pre>
+
+
+
+
+<script type="text/javascript" src="org-html-slideshow.js"></script>
+
+</div>
+</div>
+</div>
+
+<div id="postamble">
+<p class="date">Date: 2012-08-20T15:32-0500</p>
+<p class="author">Author: Aaron Bedra</p>
+<p class="creator"><a href="http://orgmode.org">Org</a> version 7.8.11 with <a href="http://www.gnu.org/software/emacs/">Emacs</a> version 24</p>
+<a href="http://validator.w3.org/check?uri=referer">Validate XHTML 1.0</a>
+
+</div>
+</body>
+</html>

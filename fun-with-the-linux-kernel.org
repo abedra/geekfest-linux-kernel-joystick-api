@@ -8,11 +8,133 @@
 * Let's have some fun!						      :slide:
 file:allyourbase.jpeg
 * The Linux Kernel can be a pretty boring place unless you are into that kind of thing, so lets head over to joystick land :slide:
-* First, let's grab the documentation
+* First, let's grab the documentation				      :slide:
 #+begin_src sh
   sudo pacman -S linux-docs
 #+end_src
+* Good news! There isn't much there. Let's just copy the docs into a source file and implement :slide:
+* Initialization						      :slide:
+#+begin_src fundamental
+  Open the joystick device following the usual semantics (that is, with
+  open). Since the driver now reports events instead of polling for
+  changes, immediately after the open it will issue a series of
+  synthetic events (JS_EVENT_INIT) that you can read to check the
+  initial state of the joystick.
 
+  By default, the device is opened in blocking mode.
+
+  int fd = open ("/dev/js0", O_RDONLY);
+#+end_src
+* Implementation 						      :slide:
+#+begin_src c
+  int open_joystick(char *device_name) {
+    int joystick_fd = -1;
+
+    if (device_name == NULL) return joystick_fd;
+
+    joystick_fd = open(device_name, O_RDONLY | O_NONBLOCK);
+
+    if (joystick_fd < 0) {
+      printf("Could not locate joystick device %s\n", device_name);
+      return joystick_fd;
+    }
+
+    return joystick_fd;
+  }
+#+end_src
+* Trying it out							      :slide:
+#+begin_src c
+  int main() {
+    int result = open_joystick("/dev/input/js1");
+    printf("Result was %d\n", result);
+    return 0;
+  }
+#+end_src
+#+begin_src sh
+  $ gcc joystick.c -o joystick
+  $ ./joystick
+  Result was 3
+#+end_src
+#+begin_src sh
+  $ ./joystick
+  Could not locate joystick device /dev/input/js1
+  Result was -1
+#+end_src
+* Event Reading							      :slide:
+#+begin_src fundamental
+  struct js_event e;
+  read (fd, &e, sizeof(struct js_event));
+
+  where js_event is defined as
+
+  struct js_event {
+          __u32 time;     // event timestamp in milliseconds
+          __s16 value;    // value
+          __u8 type;      // event type
+          __u8 number;    // axis/button number
+  };
+
+If the read is successful, it will return sizeof(struct js_event),
+unless you wanted to read more than one event per read as
+described in section 3.1.
+#+end_src
+* Implementation						      :slide:
+#+begin_src c
+  struct js_event {
+    unsigned int time;
+    short value;
+    unsigned char type;
+    unsigned char number;
+  };
+#+end_src
+* Continued							      :slide:
+#+begin_src c
+  int read_joystick_event(int joystick_fd, struct js_event *jse) {
+    int bytes;
+
+    bytes = read(joystick_fd, jse, sizeof(*jse));
+
+    if (bytes == -1) return 0;
+    if (bytes == sizeof(*jse)) return 1;
+
+    printf("Unexpected bytes from joystick:%d\n", bytes);
+
+    return -1;
+  }
+#+end_src
+* Testing it out						      :slide:
+#+begin_src c
+  int main() {
+    int fd, result;
+    struct js_event jse;
+    fd = open_joystick("/dev/input/js1");
+
+    while (1) {
+      result = read_event(fd, &jse);
+      usleep(1000);
+      if (result == 1)
+        printf("Event: time %8u, value %8hd, type: %3u, axis/button: %u\n",
+               jse.time, jse.value, jse.type, jse.number);
+    }
+
+    return 0;
+  }
+#+end_src
+* What it looks like						      :slide:
+#+begin_src sh
+  $ gcc joystick.c -o joystick
+  $ ./joystick
+  Event: time 1455917905, value        0, type: 129, axis/button: 0
+  Event: time 1455917905, value        0, type: 129, axis/button: 1
+  Event: time 1455917908, value        0, type: 129, axis/button: 2
+  Event: time 1455917908, value        0, type: 129, axis/button: 3
+  Event: time 1455917908, value        0, type: 129, axis/button: 4
+  ... Rest of initialization ...
+  Event: time 1455921538, value        1, type:   1, axis/button: 3
+  Event: time 1455921642, value        0, type:   1, axis/button: 3
+  Event: time 1455924832, value   -32767, type:   2, axis/button: 1
+  Event: time 1455924938, value        0, type:   2, axis/button: 1
+#+end_src
 
 #+TAGS: slide(s)
 
