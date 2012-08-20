@@ -1,0 +1,31 @@
+#+TITLE:     Fun with the Linux Kernel
+#+AUTHOR:    Aaron Bedra
+#+EMAIL:     aaron@aaronbedra.com
+#+LANGUAGE:  en
+
+* Fun with the Linux Kernel					      :slide:
+* Have you ever wanted to build something that required hardware interaction? :slide:
+* Let's have some fun!						      :slide:
+file:allyourbase.jpeg
+* The Linux Kernel can be a pretty boring place unless you are into that kind of thing, so lets head over to joystick land :slide:
+* First, let's grab the documentation
+#+begin_src sh
+  sudo pacman -S linux-docs
+#+end_src
+
+
+#+TAGS: slide(s)
+
+#+STYLE: <link rel="stylesheet" type="text/css" href="common.css" />
+#+STYLE: <link rel="stylesheet" type="text/css" href="screen.css" media="screen" />
+#+STYLE: <link rel="stylesheet" type="text/css" href="projection.css" media="projection" />
+#+STYLE: <link rel="stylesheet" type="text/css" href="presenter.css" media="presenter" />
+
+#+BEGIN_HTML
+<script type="text/javascript" src="org-html-slideshow.js"></script>
+#+END_HTML
+
+# Local Variables:
+# org-export-html-style-include-default: nil
+# org-export-html-style-include-scripts: nil
+# End:
