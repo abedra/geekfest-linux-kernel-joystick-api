@@ -3,7 +3,7 @@
 #+EMAIL:     aaron@aaronbedra.com
 #+LANGUAGE:  en
 
-* Fun with the Linux Kernel					      :slide:
+* Fun with the Linux Kernel API 				      :slide:
 * Have you ever wanted to build something that required hardware interaction? :slide:
 * Let's have some fun!						      :slide:
 file:allyourbase.jpeg
@@ -335,7 +335,7 @@ described in section 3.1.
   8
   9
 #+end_src
-
+* fin								      :slide:
 
 #+TAGS: slide(s)
 
