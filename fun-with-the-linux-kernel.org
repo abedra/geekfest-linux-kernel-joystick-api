@@ -11,6 +11,8 @@ file:allyourbase.jpeg
 * First, let's grab the documentation				      :slide:
 #+begin_src sh
   sudo pacman -S linux-docs
+  /usr/src/linux-3.4.9-1-ARCH/Documentation/input/joystick-api.txt >
+  joystick.c
 #+end_src
 * Good news! There isn't much there. Let's just copy the docs into a source file and implement :slide:
 * Initialization						      :slide:
@@ -80,16 +82,7 @@ described in section 3.1.
 #+end_src
 * Implementation						      :slide:
 #+begin_src c
-  struct js_event {
-    unsigned int time;
-    short value;
-    unsigned char type;
-    unsigned char number;
-  };
-#+end_src
-* Continued							      :slide:
-#+begin_src c
-  int read_joystick_event(int joystick_fd, struct js_event *jse) {
+  int read_event(int joystick_fd, struct js_event *jse) {
     int bytes;
 
     bytes = read(joystick_fd, jse, sizeof(*jse));
@@ -222,14 +215,14 @@ described in section 3.1.
 #+begin_src c
   int main() {
     int fd, version, axes=0, buttons=0;
-    char name[80];
+    char name[128];
     struct js_event jse;
     fd = open_joystick("/dev/input/js1");
 
     ioctl(fd, JSIOCGAXES, &axes);
     ioctl(fd, JSIOCGBUTTONS, &buttons);
     ioctl(fd, JSIOCGVERSION, &version);
-    ioctl(fd, JSIOCGNAME(80), &name);
+    ioctl(fd, JSIOCGNAME(sizeof(name)), &name);
 
     printf("Name: %s Axes: %d Buttons: %d Version: %d\n", name, axes, buttons, version);
 
@@ -242,6 +235,107 @@ described in section 3.1.
   $ ./joystick
   Name: USB Gamepad  Axes: 2 Buttons: 10 Version: 131328
 #+end_src
+* Putting it all together					      :slide:
+  - With our experimentation out of the way, we can build a complete example program. It should perform the following:
+    - Exit if the device is not found
+    - Read and display the device info
+    - Read from the device buffer and display the event
+      - On an axis event, display direction
+      - On a button event, display button number
+* Complete implementation					      :slide:
+#+begin_src c
+  #include <stdlib.h>
+  #include <stdio.h>
+  #include <unistd.h>
+  #include <linux/joystick.h>
+
+  int open_joystick(char *device_name) {
+  int fd = -1;
+
+   if (device_name == NULL) {
+     return fd;
+   }
+
+   fd = open(device_name, O_RDONLY | O_NONBLOCK);
+
+   if (fd < 0) {
+     printf("Could not locate joystick device %s\n", device_name);
+     exit(1);
+   }
+
+   return fd;
+  }
+
+  void print_device_info(int fd) {
+    int axes=0, buttons=0;
+    char name[128];
+
+    ioctl(fd, JSIOCGAXES, &axes);
+    ioctl(fd, JSIOCGBUTTONS, &buttons);
+    ioctl(fd, JSIOCGNAME(sizeof(name)), &name);
+
+    printf("%s\n  %d Axes %d Buttons\n", name, axes, buttons);
+  }
+
+  void process_event(struct js_event jse) {
+    if (jse.type == 2) {
+      if (jse.number == 0) {
+        if (jse.value < 0) {
+          printf("LEFT\n");
+        } else if (jse.value > 0) {
+          printf("RIGHT\n");
+        }
+      } else {
+        if (jse.value < 0) {
+          printf("UP\n");
+        } else if (jse.value > 0) {
+          printf("DOWN\n");
+        }
+      }
+    }
+
+    if (jse.type == 1 && jse.value > 0) {
+      printf("%d\n", jse.number);
+    }
+  }
+
+  int main() {
+    int fd;
+    struct js_event jse;
+
+    fd = open_joystick("/dev/input/js1");
+    print_device_info(fd);
+
+    while (1) {
+      while (read(fd, &jse, sizeof(jse)) > 0) {
+        process_event(jse);
+      }
+    }
+
+    return 0;
+  }
+#+end_src
+* The final test! 						      :slide:
+#+begin_src sh
+  $ ./complete
+  USB Gamepad
+    2 Axes 10 Buttons
+  UP
+  UP
+  DOWN
+  DOWN
+  LEFT
+  RIGHT
+  LEFT
+  RIGHT
+  2
+  1
+  2
+  1
+  8
+  9
+#+end_src
+
 
 #+TAGS: slide(s)
 

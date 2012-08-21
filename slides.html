@@ -7,7 +7,7 @@
 <meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"/>
 <meta name="title" content="Fun with the Linux Kernel"/>
 <meta name="generator" content="Org-mode"/>
-<meta name="generated" content="2012-08-20T17:20-0500"/>
+<meta name="generated" content="2012-08-20T21:34-0500"/>
 <meta name="author" content="Aaron Bedra"/>
 <meta name="description" content=""/>
 <meta name="keywords" content=""/>
@@ -44,17 +44,19 @@
 <li><a href="#sec-9">9 Trying it out</a></li>
 <li><a href="#sec-10">10 Event Reading</a></li>
 <li><a href="#sec-11">11 Implementation</a></li>
-<li><a href="#sec-12">12 Continued</a></li>
-<li><a href="#sec-13">13 Testing it out</a></li>
-<li><a href="#sec-14">14 What it looks like</a></li>
-<li><a href="#sec-15">15 There is a detailed explanation of what each of the members of the <code>js_event</code> struct actually means that we won't cover here</a></li>
-<li><a href="#sec-16">16 Reading</a></li>
-<li><a href="#sec-17">17 Non-Blocking Reads</a></li>
-<li><a href="#sec-18">18 Cleaning up our test program</a></li>
-<li><a href="#sec-19">19 Why?</a></li>
-<li><a href="#sec-20">20 Identifying the device</a></li>
-<li><a href="#sec-21">21 Implementation</a></li>
-<li><a href="#sec-22">22 The results</a></li>
+<li><a href="#sec-12">12 Testing it out</a></li>
+<li><a href="#sec-13">13 What it looks like</a></li>
+<li><a href="#sec-14">14 There is a detailed explanation of what each of the members of the <code>js_event</code> struct actually means that we won't cover here</a></li>
+<li><a href="#sec-15">15 Reading</a></li>
+<li><a href="#sec-16">16 Non-Blocking Reads</a></li>
+<li><a href="#sec-17">17 Cleaning up our test program</a></li>
+<li><a href="#sec-18">18 Why?</a></li>
+<li><a href="#sec-19">19 Identifying the device</a></li>
+<li><a href="#sec-20">20 Implementation</a></li>
+<li><a href="#sec-21">21 The results</a></li>
+<li><a href="#sec-22">22 Putting it all together</a></li>
+<li><a href="#sec-23">23 Complete implementation</a></li>
+<li><a href="#sec-24">24 The final test!</a></li>
 </ul>
 </div>
 </div>
@@ -100,6 +102,8 @@
 
 
 <pre class="src src-sh">sudo pacman -S linux-docs
+/usr/src/linux-3.4.9-1-ARCH/Documentation/input/joystick-api.txt &gt;
+joystick.c
 </pre>
 
 </div>
@@ -228,26 +232,7 @@ described in section 3.1.
 
 
 
-<pre class="src src-c"><span style="color: #af00ff;">struct</span> <span style="color: #008700;">js_event</span> {
-  <span style="color: #008700;">unsigned</span> <span style="color: #008700;">int</span> <span style="color: #af5f00;">time</span>;
-  <span style="color: #008700;">short</span> <span style="color: #af5f00;">value</span>;
-  <span style="color: #008700;">unsigned</span> <span style="color: #008700;">char</span> <span style="color: #af5f00;">type</span>;
-  <span style="color: #008700;">unsigned</span> <span style="color: #008700;">char</span> <span style="color: #af5f00;">number</span>;
-};
-</pre>
-
-</div>
-
-</div>
-
-<div id="outline-container-12" class="outline-2">
-<h2 id="sec-12"><span class="section-number-2">12</span> Continued &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
-<div class="outline-text-2" id="text-12">
-
-
-
-
-<pre class="src src-c"><span style="color: #008700;">int</span> <span style="color: #0000ff;">read_joystick_event</span>(<span style="color: #008700;">int</span> <span style="color: #af5f00;">joystick_fd</span>, <span style="color: #af00ff;">struct</span> <span style="color: #008700;">js_event</span> *<span style="color: #af5f00;">jse</span>) {
+<pre class="src src-c"><span style="color: #008700;">int</span> <span style="color: #0000ff;">read_event</span>(<span style="color: #008700;">int</span> <span style="color: #af5f00;">joystick_fd</span>, <span style="color: #af00ff;">struct</span> <span style="color: #008700;">js_event</span> *<span style="color: #af5f00;">jse</span>) {
   <span style="color: #008700;">int</span> <span style="color: #af5f00;">bytes</span>;
 
   bytes = read(joystick_fd, jse, <span style="color: #af00ff;">sizeof</span>(*jse));
@@ -265,9 +250,9 @@ described in section 3.1.
 
 </div>
 
-<div id="outline-container-13" class="outline-2">
-<h2 id="sec-13"><span class="section-number-2">13</span> Testing it out &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
-<div class="outline-text-2" id="text-13">
+<div id="outline-container-12" class="outline-2">
+<h2 id="sec-12"><span class="section-number-2">12</span> Testing it out &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
+<div class="outline-text-2" id="text-12">
 
 
 
@@ -293,9 +278,9 @@ described in section 3.1.
 
 </div>
 
-<div id="outline-container-14" class="outline-2">
-<h2 id="sec-14"><span class="section-number-2">14</span> What it looks like &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
-<div class="outline-text-2" id="text-14">
+<div id="outline-container-13" class="outline-2">
+<h2 id="sec-13"><span class="section-number-2">13</span> What it looks like &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
+<div class="outline-text-2" id="text-13">
 
 
 
@@ -318,17 +303,17 @@ Event: time 1455924938, value        0, type:   2, axis/button: 1
 
 </div>
 
+<div id="outline-container-14" class="outline-2">
+<h2 id="sec-14"><span class="section-number-2">14</span> There is a detailed explanation of what each of the members of the <code>js_event</code> struct actually means that we won't cover here &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
+<div class="outline-text-2" id="text-14">
+
+</div>
+
+</div>
+
 <div id="outline-container-15" class="outline-2">
-<h2 id="sec-15"><span class="section-number-2">15</span> There is a detailed explanation of what each of the members of the <code>js_event</code> struct actually means that we won't cover here &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
+<h2 id="sec-15"><span class="section-number-2">15</span> Reading &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
 <div class="outline-text-2" id="text-15">
-
-</div>
-
-</div>
-
-<div id="outline-container-16" class="outline-2">
-<h2 id="sec-16"><span class="section-number-2">16</span> Reading &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
-<div class="outline-text-2" id="text-16">
 
 
 
@@ -349,9 +334,9 @@ admittedly, a long time;)
 
 </div>
 
-<div id="outline-container-17" class="outline-2">
-<h2 id="sec-17"><span class="section-number-2">17</span> Non-Blocking Reads &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
-<div class="outline-text-2" id="text-17">
+<div id="outline-container-16" class="outline-2">
+<h2 id="sec-16"><span class="section-number-2">16</span> Non-Blocking Reads &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
+<div class="outline-text-2" id="text-16">
 
 
 
@@ -379,9 +364,9 @@ For example,
 
 </div>
 
-<div id="outline-container-18" class="outline-2">
-<h2 id="sec-18"><span class="section-number-2">18</span> Cleaning up our test program &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
-<div class="outline-text-2" id="text-18">
+<div id="outline-container-17" class="outline-2">
+<h2 id="sec-17"><span class="section-number-2">17</span> Cleaning up our test program &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
+<div class="outline-text-2" id="text-17">
 
 
 
@@ -406,9 +391,9 @@ For example,
 
 </div>
 
-<div id="outline-container-19" class="outline-2">
-<h2 id="sec-19"><span class="section-number-2">19</span> Why? &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
-<div class="outline-text-2" id="text-19">
+<div id="outline-container-18" class="outline-2">
+<h2 id="sec-18"><span class="section-number-2">18</span> Why? &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
+<div class="outline-text-2" id="text-18">
 
 
 
@@ -431,9 +416,9 @@ delay the processing till later.
 
 </div>
 
-<div id="outline-container-20" class="outline-2">
-<h2 id="sec-20"><span class="section-number-2">20</span> Identifying the device &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
-<div class="outline-text-2" id="text-20">
+<div id="outline-container-19" class="outline-2">
+<h2 id="sec-19"><span class="section-number-2">19</span> Identifying the device &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
+<div class="outline-text-2" id="text-19">
 
 
 
@@ -458,23 +443,23 @@ For example, to read the number of axes
 
 </div>
 
-<div id="outline-container-21" class="outline-2">
-<h2 id="sec-21"><span class="section-number-2">21</span> Implementation &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
-<div class="outline-text-2" id="text-21">
+<div id="outline-container-20" class="outline-2">
+<h2 id="sec-20"><span class="section-number-2">20</span> Implementation &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
+<div class="outline-text-2" id="text-20">
 
 
 
 
 <pre class="src src-c"><span style="color: #008700;">int</span> <span style="color: #0000ff;">main</span>() {
   <span style="color: #008700;">int</span> <span style="color: #af5f00;">fd</span>, <span style="color: #af5f00;">version</span>, <span style="color: #af5f00;">axes</span>=0, <span style="color: #af5f00;">buttons</span>=0;
-  <span style="color: #008700;">char</span> <span style="color: #af5f00;">name</span>[80];
+  <span style="color: #008700;">char</span> <span style="color: #af5f00;">name</span>[128];
   <span style="color: #af00ff;">struct</span> <span style="color: #008700;">js_event</span> <span style="color: #af5f00;">jse</span>;
   fd = open_joystick(<span style="color: #87005f;">"/dev/input/js1"</span>);
 
   ioctl(fd, JSIOCGAXES, &amp;axes);
   ioctl(fd, JSIOCGBUTTONS, &amp;buttons);
   ioctl(fd, JSIOCGVERSION, &amp;version);
-  ioctl(fd, JSIOCGNAME(80), &amp;name);
+  ioctl(fd, JSIOCGNAME(<span style="color: #af00ff;">sizeof</span>(name)), &amp;name);
 
   printf(<span style="color: #87005f;">"Name: %s Axes: %d Buttons: %d Version: %d\n"</span>, name, axes, buttons, version);
 
@@ -486,9 +471,9 @@ For example, to read the number of axes
 
 </div>
 
-<div id="outline-container-22" class="outline-2">
-<h2 id="sec-22"><span class="section-number-2">22</span> The results &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
-<div class="outline-text-2" id="text-22">
+<div id="outline-container-21" class="outline-2">
+<h2 id="sec-21"><span class="section-number-2">21</span> The results &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
+<div class="outline-text-2" id="text-21">
 
 
 
@@ -497,6 +482,149 @@ For example, to read the number of axes
 $ ./joystick
 Name: USB Gamepad  Axes: 2 Buttons: 10 Version: 131328
 </pre>
+
+</div>
+
+</div>
+
+<div id="outline-container-22" class="outline-2">
+<h2 id="sec-22"><span class="section-number-2">22</span> Putting it all together &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
+<div class="outline-text-2" id="text-22">
+
+<ul>
+<li>With our experimentation out of the way, we can build a complete example program. It should perform the following:
+<ul>
+<li>Exit if the device is not found
+</li>
+<li>Read and display the device info
+</li>
+<li>Read from the device buffer and display the event
+<ul>
+<li>On an axis event, display direction
+</li>
+<li>On a button event, display button number
+</li>
+</ul>
+
+</li>
+</ul>
+
+</li>
+</ul>
+
+</div>
+
+</div>
+
+<div id="outline-container-23" class="outline-2">
+<h2 id="sec-23"><span class="section-number-2">23</span> Complete implementation &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
+<div class="outline-text-2" id="text-23">
+
+
+
+
+<pre class="src src-c"><span style="color: #5f5f87;">#include</span> <span style="color: #87005f;">&lt;stdlib.h&gt;</span>
+<span style="color: #5f5f87;">#include</span> <span style="color: #87005f;">&lt;stdio.h&gt;</span>
+<span style="color: #5f5f87;">#include</span> <span style="color: #87005f;">&lt;unistd.h&gt;</span>
+<span style="color: #5f5f87;">#include</span> <span style="color: #87005f;">&lt;linux/joystick.h&gt;</span>
+
+<span style="color: #008700;">int</span> <span style="color: #0000ff;">open_joystick</span>(<span style="color: #008700;">char</span> *<span style="color: #af5f00;">device_name</span>) {
+<span style="color: #008700;">int</span> <span style="color: #af5f00;">fd</span> = -1;
+
+ <span style="color: #af00ff;">if</span> (device_name == <span style="color: #008787;">NULL</span>) {
+   <span style="color: #af00ff;">return</span> fd;
+ }
+
+ fd = open(device_name, O_RDONLY | O_NONBLOCK);
+
+ <span style="color: #af00ff;">if</span> (fd &lt; 0) {
+   printf(<span style="color: #87005f;">"Could not locate joystick device %s\n"</span>, device_name);
+   exit(1);
+ }
+
+ <span style="color: #af00ff;">return</span> fd;
+}
+
+<span style="color: #008700;">void</span> <span style="color: #0000ff;">print_device_info</span>(<span style="color: #008700;">int</span> <span style="color: #af5f00;">fd</span>) {
+  <span style="color: #008700;">int</span> <span style="color: #af5f00;">axes</span>=0, <span style="color: #af5f00;">buttons</span>=0;
+  <span style="color: #008700;">char</span> <span style="color: #af5f00;">name</span>[128];
+
+  ioctl(fd, JSIOCGAXES, &amp;axes);
+  ioctl(fd, JSIOCGBUTTONS, &amp;buttons);
+  ioctl(fd, JSIOCGNAME(<span style="color: #af00ff;">sizeof</span>(name)), &amp;name);
+
+  printf(<span style="color: #87005f;">"%s\n  %d Axes %d Buttons\n"</span>, name, axes, buttons);
+}
+
+<span style="color: #008700;">void</span> <span style="color: #0000ff;">process_event</span>(<span style="color: #af00ff;">struct</span> <span style="color: #008700;">js_event</span> <span style="color: #af5f00;">jse</span>) {
+  <span style="color: #af00ff;">if</span> (jse.type == 2) {
+    <span style="color: #af00ff;">if</span> (jse.number == 0) {
+      <span style="color: #af00ff;">if</span> (jse.value &lt; 0) {
+        printf(<span style="color: #87005f;">"LEFT\n"</span>);
+      } <span style="color: #af00ff;">else</span> <span style="color: #af00ff;">if</span> (jse.value &gt; 0) {
+        printf(<span style="color: #87005f;">"RIGHT\n"</span>);
+      }
+    } <span style="color: #af00ff;">else</span> {
+      <span style="color: #af00ff;">if</span> (jse.value &lt; 0) {
+        printf(<span style="color: #87005f;">"UP\n"</span>);
+      } <span style="color: #af00ff;">else</span> <span style="color: #af00ff;">if</span> (jse.value &gt; 0) {
+        printf(<span style="color: #87005f;">"DOWN\n"</span>);
+      }
+    }
+  }
+
+  <span style="color: #af00ff;">if</span> (jse.type == 1 &amp;&amp; jse.value &gt; 0) {
+    printf(<span style="color: #87005f;">"%d\n"</span>, jse.number);
+  }
+}
+
+<span style="color: #008700;">int</span> <span style="color: #0000ff;">main</span>() {
+  <span style="color: #008700;">int</span> <span style="color: #af5f00;">fd</span>;
+  <span style="color: #af00ff;">struct</span> <span style="color: #008700;">js_event</span> <span style="color: #af5f00;">jse</span>;
+
+  fd = open_joystick(<span style="color: #87005f;">"/dev/input/js1"</span>);
+  print_device_info(fd);
+
+  <span style="color: #af00ff;">while</span> (1) {
+    <span style="color: #af00ff;">while</span> (read(fd, &amp;jse, <span style="color: #af00ff;">sizeof</span>(jse)) &gt; 0) {
+      process_event(jse);
+    }
+  }
+
+  <span style="color: #af00ff;">return</span> 0;
+}
+</pre>
+
+</div>
+
+</div>
+
+<div id="outline-container-24" class="outline-2">
+<h2 id="sec-24"><span class="section-number-2">24</span> The final test! &nbsp;&nbsp;&nbsp;<span class="tag"><span class="slide">slide</span></span></h2>
+<div class="outline-text-2" id="text-24">
+
+
+
+
+<pre class="src src-sh">$ ./complete
+USB Gamepad
+  2 Axes 10 Buttons
+UP
+UP
+DOWN
+DOWN
+LEFT
+RIGHT
+LEFT
+RIGHT
+2
+1
+2
+1
+8
+9
+</pre>
+
 
 
 
@@ -508,7 +636,7 @@ Name: USB Gamepad  Axes: 2 Buttons: 10 Version: 131328
 </div>
 
 <div id="postamble">
-<p class="date">Date: 2012-08-20T17:20-0500</p>
+<p class="date">Date: 2012-08-20T21:34-0500</p>
 <p class="author">Author: Aaron Bedra</p>
 <p class="creator"><a href="http://orgmode.org">Org</a> version 7.8.11 with <a href="http://www.gnu.org/software/emacs/">Emacs</a> version 24</p>
 <a href="http://validator.w3.org/check?uri=referer">Validate XHTML 1.0</a>
